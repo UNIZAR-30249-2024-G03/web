@@ -50,6 +50,9 @@ import es from 'date-fns/locale/es';
 import 'leaflet/dist/leaflet.css';
 import { GeoJSON, MapContainer, TileLayer, FeatureGroup, Rectangle, useMap, LayerGroup, Circle, LayersControl, Marker, Popup, WMSTileLayer } from 'react-leaflet'
 import { useMapEvents } from 'react-leaflet/hooks'
+import Control from 'react-leaflet-custom-control'
+import { createRoot } from "react-dom/client";
+import { flushSync } from "react-dom";
 
 const serverHost = "http://localhost:4040"
 
@@ -78,15 +81,15 @@ function App() {
     const [espaciosMostrarGeoJSON, setEspaciosMostrarGeoJSON] = useState([])
 
     useEffect(() =>{
-      console.log(planta0GeoJson)
+      //console.log(planta0GeoJson)
       const pruebaFiltrado = ({
         ...planta0GeoJson,
         features : planta0GeoJson.features.filter((f) => espacios.some((e) => e.id == f.id.replace("espacio.", "")))
         }
       )
-      console.log(pruebaFiltrado)
+      //console.log(pruebaFiltrado)
       setEspaciosMostrarGeoJSON(pruebaFiltrado)
-      console.log("espacios modificado")
+      //console.log("espacios modificado")
     }
     , [espacios])
 
@@ -125,12 +128,12 @@ function App() {
         setLoadingReservas(true)
         fetch(serverHost + "/reservas?idUsuario=" + email)
         .then(response => {
-          console.log(response)
+          //console.log(response)
           if (response.status == 200){
             return response.json()
           }
         }).then(json => {
-          console.log(json)
+          // console.log(json)
           setReservas(json)
           setLoadingReservas(false)
         }).catch(() => {
@@ -195,7 +198,7 @@ function App() {
       const [dateReserva, setDateReserva] = useState(new Date())
 
       const TablaEspacios = () => {
-        console.log(espacios)
+        // console.log(espacios)
         return (
           <>
         <Table>
@@ -289,16 +292,16 @@ function App() {
 
         const urlConParams = url + params.toString(); 
 
-        console.log(urlConParams)
+        // console.log(urlConParams)
 
         fetch(urlConParams)
         .then(response => {
-          console.log(response)
+          // console.log(response)
           if (response.status == 200){
             return response.json()
           }
         }).then(json => {
-          console.log(json)
+          // console.log(json)
           setEspacios(json)
           setLoadingEspacios(false)
         }).catch(() => {
@@ -316,16 +319,6 @@ function App() {
         fechaInicio.setHours(e.target.horaInicio.value, 0, 0)
         const fechaFinal = new Date(dateReserva);
         fechaFinal.setHours(e.target.horaFinal.value, 0, 0)
-        const body = {
-          idUsuario: email,
-          idsEspacios: espaciosSeleccionados.map((e) => e.id),
-          tipoUsoReserva: tipoUsoReserva,
-          numMaxOcupantes: parseInt(e.target.numOcupantes.value),
-          fechaInicio: fechaInicio.toISOString(),
-          fechaFinal: fechaFinal.toISOString(),
-          descripcion: e.target.descripcion.value,
-        }
-        console.log(body)
         const params = new URLSearchParams();
         params.set("idUsuario", email)
         params.set("idsEspacios", arrayToString(espaciosSeleccionados.map((e) => e.id)))
@@ -339,7 +332,7 @@ function App() {
           method: "POST",
         })
         .then(async response => {
-          console.log(response)
+          // console.log(response)
           if (response.status == 200){
             return response.json()
           }
@@ -350,7 +343,7 @@ function App() {
               title: "¡No se ha podido reservar!",
               description: motivo,
             })
-            console.log(motivo)
+            // console.log(motivo)
           }
         }).then(json => {
           if (json){
@@ -359,7 +352,7 @@ function App() {
               title: "¡Reserva completada!",
             })
           }
-          console.log(json)
+          // console.log(json)
         }).catch(() => {
           toast({
             variant: "destructive",
@@ -518,34 +511,34 @@ function App() {
         {   espaciosSeleccionados.length == 0 && 
               <div className="text-l pt-4 text-center leading-7 text-gray-600">No hay espacios seleccionados</div>}
             {/* <Input id="nombre" placeholder="Introduzca el nombre"/> */}
-            <form className='pt-12' onSubmit={searchEspacios}>
+            <form className='pt-12 z-[2000]' onSubmit={searchEspacios}>
               <div className='flex flex-row gap-2'>
-            <Select onValueChange={(value) => setPlantaSeleccionada(value)} id="planta">
+            <Select className='z-[2000]' onValueChange={(value) => setPlantaSeleccionada(value)} id="planta">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Planta" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">0</SelectItem>
-                <SelectItem value="1">1</SelectItem>
-                <SelectItem value="2">2</SelectItem>
-                <SelectItem value="3">3</SelectItem>
-                <SelectItem value="4">4</SelectItem>
+              <SelectContent className='z-[2000]'>
+                <SelectItem className='z-[2000]' value="0">0</SelectItem>
+                <SelectItem className='z-[2000]' value="1">1</SelectItem>
+                <SelectItem className='z-[2000]' value="2">2</SelectItem>
+                <SelectItem className='z-[2000]' value="3">3</SelectItem>
+                <SelectItem className='z-[2000]' value="4">4</SelectItem>
               </SelectContent>
             </Select>
             {/* <Input id="planta" placeholder="Introduzca la planta"/> */}
             <Input id="id" placeholder="Id"/>
             <Input type="number" min={0} step={1} id="numOcupantes" placeholder="Número máximo de ocupantes"/>
             {/* <Input id="categoriaReserva" placeholder="Introduzca la categoria de reserva"/> */}
-            <Select onValueChange={(value) => setCategoriaReserva(value)} id="categoriaReserva">
+            <Select className='z-[2000]' onValueChange={(value) => setCategoriaReserva(value)} id="categoriaReserva">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Categoria reserva" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="AULA">Aula</SelectItem>
-                <SelectItem value="SEMINARIO">Seminario</SelectItem>
-                <SelectItem value="LABORATORIO">Laboratorio</SelectItem>
-                <SelectItem value="DESPACHO">Despacho</SelectItem>
-                <SelectItem value="SALA_COMUN">Sala comun</SelectItem>
+              <SelectContent className='z-[2000]'>
+                <SelectItem className='z-[2000]' value="AULA">Aula</SelectItem>
+                <SelectItem className='z-[2000]' value="SEMINARIO">Seminario</SelectItem>
+                <SelectItem className='z-[2000]' value="LABORATORIO">Laboratorio</SelectItem>
+                <SelectItem className='z-[2000]' value="DESPACHO">Despacho</SelectItem>
+                <SelectItem className='z-[2000]' value="SALA_COMUN">Sala comun</SelectItem>
               </SelectContent>
             </Select>
             <Button type="submit">Buscar</Button>
@@ -591,13 +584,43 @@ function App() {
   }
 
   const Mapa = (geoJSON) => {
-    console.log(geoJSON.geoJson)
+    const cosas = geoJSON.geoJson
     const center = [41.683728, -0.888642]
-    const rectangle = [
-      [51.49, -0.08],
-      [51.5, -0.06],
-    ]
-    const [plantaSeleccionada, setPlantaSeleccionada] = useState(0)
+    const [plantaSeleccionada, setPlantaSeleccionada] = useState(0) 
+    
+    const cosasFiltradas = (
+      {
+        ...cosas,
+        features : cosas.features.filter((f) => f.properties.planta == plantaSeleccionada)
+      }
+    )
+
+    // console.log(cosasFiltradas)
+
+    const Popup = ({id, horaApertura, horaCierre, capacidad}) => {
+      return (
+      <div className='flex flex-col'>
+        <span>
+        <b>Id: </b>{id}
+        </span>
+      </div>
+      )
+    }
+
+    function onEachFeature(feature, layer){
+      if(feature.properties){
+        console.log(feature)
+        layer.bindPopup(() => {
+          const div = document.createElement("div");
+          const root = createRoot(div);
+          flushSync(() => {
+            root.render(<Popup id={feature.id.replace("espacio.", "")}/>);
+          });
+          return div.innerHTML;
+          
+        })
+      }
+    }
     
     return (
           <MapContainer className='map' center={center} zoom={20} maxZoom={21} scrollWheelZoom={true}>
@@ -607,7 +630,29 @@ function App() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <GeoJSON key={JSON.stringify(geoJSON?.geoJson.features)} data={geoJSON.geoJson} style={{color: "purple"}}></GeoJSON>
+          <GeoJSON key={JSON.stringify(cosasFiltradas.features)} onEachFeature={onEachFeature} data={cosasFiltradas}
+            style={(feature) => {
+              //console.log(feature)
+              switch (feature.properties.categoria_reserva) {
+                  case 'AULA': return {color: "red"};
+                  case 'SEMINARIO': return {color: "blue"};
+                  case 'DESPACHO': return {color: "purple"};
+                  case 'LABORATORIO':   return {color: "green"};
+                  case 'SALA_COMUN':   return {color: "brown"};
+              }
+
+              return {color: "purple"}
+            }}
+            ></GeoJSON>
+          <Control prepend position='topleft'>
+            <div className='flex flex-col gap-1'>
+              <Button className={plantaSeleccionada == 0 ? "bg-slate-400 hover:bg-slate-500" : ""} onClick={() => setPlantaSeleccionada(0)}>0</Button>
+              <Button className={plantaSeleccionada == 1 ? "bg-slate-400 hover:bg-slate-500" : ""} onClick={() => setPlantaSeleccionada(1)}>1</Button>
+              <Button className={plantaSeleccionada == 2 ? "bg-slate-400 hover:bg-slate-500" : ""} onClick={() => setPlantaSeleccionada(2)}>2</Button>
+              <Button className={plantaSeleccionada == 3 ? "bg-slate-400 hover:bg-slate-500" : ""} onClick={() => setPlantaSeleccionada(3)}>3</Button>
+              <Button className={plantaSeleccionada == 4 ? "bg-slate-400 hover:bg-slate-500" : ""} onClick={() => setPlantaSeleccionada(4)}>4</Button>
+            </div>
+            </Control>
         </MapContainer>
     
     )
@@ -663,7 +708,7 @@ function App() {
         setEmail(emailValue)
         fetch(serverHost + "/personas?email=" + emailValue)
         .then(response => {
-          console.log(response)
+          //console.log(response)
           if (response.status == 200){
             return response.json()
           }
@@ -675,7 +720,7 @@ function App() {
             })
           }
         }).then(json => {
-          console.log(json)
+          //console.log(json)
           setPersona(json)
         }).catch(() => {
           toast({
@@ -700,15 +745,15 @@ function App() {
       fetch("http://localhost:8080/geoserver/proyecto/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=proyecto%3Aespacio&outputFormat=application%2Fjson")
       .then((e) => e.json())
       .then((json) => { 
-        console.log(json)
-        // setplanta0GeoJson(json)
-        const planta0 = (
-          {
-            ...json,
-            features : json.features.filter((f) => f.properties.planta == 0)
-          }
-        )
-        setplanta0GeoJson(planta0)
+        // console.log(json)
+        setplanta0GeoJson(json)
+        // const planta0 = (
+        //   {
+        //     ...json,
+        //     features : json.features.filter((f) => f.properties.planta == 0)
+        //   }
+        // )
+        // setplanta0GeoJson(planta0)
       }) 
     }
     , [])
