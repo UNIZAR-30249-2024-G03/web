@@ -34,6 +34,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { format } from "date-fns"
@@ -99,6 +101,7 @@ function App() {
     
     function MostrarReservas (){
       const { toast } = useToast()
+      const esGerente = persona.roles.includes("Gerente")
       const LoadingRow = ( () =>
         <TableRow key={"loading"}>
           <TableCell>
@@ -145,6 +148,40 @@ function App() {
           })
         });
       }
+
+      function eliminarReserva(id){
+        const params = new URLSearchParams();
+        params.set("idReserva", id)
+        params.set("idUsuario", email)
+
+        fetch(serverHost + "/reservas?" + params.toString() ,{
+          method: "DELETE",
+        }).then(response => {
+          // console.log(response)
+          if (response.status == 200){
+            toast({
+              title: "Reserva eliminada!",
+            })
+            fetchReservas()
+          }
+          else {
+            toast({
+              variant: "destructive",
+              title: "¡No se ha podido eliminar la reserva!",
+            })
+            fetchReservas()
+          }
+        }).catch(() => {
+          toast({
+            variant: "destructive",
+            title: "¡Algo ha fallado!",
+            description: "Compruebe que el servidor esta en ejecución",
+          })
+        });
+
+      }
+      
+      console.log(persona.roles.includes("Gerente"))
     
       return (
         <div >
@@ -159,7 +196,8 @@ function App() {
           <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Activa</TableHead>
+              {esGerente && <TableHead>Id</TableHead>}
+              {!esGerente && <TableHead>Activa</TableHead>}
               <TableHead>Fecha</TableHead>
               <TableHead>Descripcion</TableHead>
               <TableHead>Espacios</TableHead>
@@ -172,15 +210,53 @@ function App() {
             {LoadingReservas && <LoadingRow/>}
             {reservas.map((reserva) => (
               <TableRow key={reserva.id}>
-                  <TableCell>
+                {esGerente && <TableCell>{reserva.id}</TableCell>}
+                {!esGerente && <TableCell>
                     <input readOnly type="checkbox" checked={!reserva.anulado} />
-                  </TableCell>
+                  </TableCell>}
+                  
                   <TableCell>{new Date(reserva.infoReserva.fechaInicio).toLocaleDateString('es-ES')}</TableCell>
                   <TableCell>{reserva.infoReserva.descripcion}</TableCell>
                   <TableCell>{arrayToString(reserva.espacios.map(e => e.id))}</TableCell>
                   <TableCell>{reserva.infoReserva.numeroPersonas}</TableCell>
                   <TableCell>{reserva.infoReserva.horaInicio}</TableCell>
                   <TableCell>{reserva.infoReserva.horaFinal}</TableCell>
+                  {esGerente && 
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                        <Button disabled={reserva.anulado} className="bg-red-500 hover:bg-red-600">Eliminar</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Eliminar reserva</DialogTitle>
+                            <DialogDescription>
+                            ¿Seguro que deseas eliminar la reserva con id {reserva.id} del dia {new Date(reserva.infoReserva.fechaInicio).toLocaleDateString('es-ES')}?
+                            </DialogDescription>
+                            <DialogFooter className="justify-end">
+                              <DialogClose asChild>
+                                <Button type="button" variant="secondary">
+                                  Cerrar
+                                </Button>
+                              </DialogClose>
+                              <DialogClose asChild>
+                              <Button
+                              className="bg-red-500 text-white hover:bg-red-600"
+                              onClick={() => {
+                              eliminarReserva(reserva.id)
+                            }}>
+                              Eliminar
+                            </Button>
+                            </DialogClose>
+                            </DialogFooter>
+                            
+                            
+                          </DialogHeader>
+                        </DialogContent>
+                      </Dialog>
+                 
+                    </TableCell>
+                  }
               </TableRow>))}
           </TableBody>
         </Table>
