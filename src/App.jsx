@@ -22,6 +22,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Separator } from '@radix-ui/react-separator'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -180,8 +181,6 @@ function App() {
         });
 
       }
-      
-      console.log(persona.roles.includes("Gerente"))
     
       return (
         <div >
@@ -269,12 +268,66 @@ function App() {
     
     function BuscarEspacios (){
       const { toast } = useToast()
+      const esGerente = persona.roles.includes("Gerente")
       const [plantaSeleccionada, setPlantaSeleccionada] = useState(undefined)
       const [categoriaReserva, setCategoriaReserva] = useState(undefined)
       const [tipoUsoReserva, setTipoUsoReserva] = useState(undefined)
       const [dateReserva, setDateReserva] = useState(new Date())
 
+      
+
       const TablaEspacios = () => {
+        const [categoriaReservaNueva, setCategoriaReservaNueva] = useState(undefined)
+        const [entidadAsignadaNueva, setEntidadAsignadaNueva] = useState(undefined)
+        const [departamentoAsignadoNueva, setDepartamentoAsignadoNueva] = useState(undefined)
+
+        const modificarEspacio = (e) =>{
+          e.preventDefault();
+          const params = new URLSearchParams();
+          params.set("idEspacio",  e.target.idEspacio.value)
+          params.set("idUsuario", email)
+          params.set("reservable", e.target.reservable.value == "on")
+          params.set("categoriaReserva", categoriaReservaNueva)
+          if (e.target.horaInicio) params.set("horarioInicioReservaDisponible", e.target.horaInicio.value)
+          if (e.target.horaFinal) params.set("horarioFinalReservaDisponible", e.target.horaFinal.value)
+          if (e.target.porcentajeUso) params.set("porcentajeUsoMaximo", e.target.porcentajeUso.value)
+          params.set("tipoEntidadAsignableEspacio", entidadAsignadaNueva)
+          if (departamentoAsignadoNueva) params.set("departamentoAsignado", departamentoAsignadoNueva)
+          if (e.target.personasAsignado) params.set("personasAsignadas", e.target.personasAsignado.value.split(','))
+
+          console.log(serverHost + "/espacios?" + params.toString())
+          fetch(serverHost + "/espacios?" + params.toString() ,{
+            method: "POST",
+          })
+          .then(async response => {
+            // console.log(response)
+            if (response.status == 200){
+              return response.json()
+            }
+            else {
+              const motivo = await response.text()
+              toast({
+                variant: "destructive",
+                title: "¡No se ha podido modificar!",
+                description: motivo,
+              })
+              // console.log(motivo)
+            }
+          }).then(json => {
+            if (json){
+              toast({
+                title: "¡Espacio modificado!",
+              })
+            }
+            // console.log(json)
+          }).catch(() => {
+            toast({
+              variant: "destructive",
+              title: "¡Algo ha fallado!",
+              description: "Compruebe que el servidor Wrapper esta en ejecución",
+            })
+          });
+        }
         // console.log(espacios)
         return (
           <>
@@ -282,6 +335,7 @@ function App() {
           <TableHeader>
             <TableRow>
               <TableHead>Id</TableHead>
+              {esGerente && <TableHead>Reservable</TableHead>}
               <TableHead>Tamaño (m2)</TableHead>
               <TableHead>Categoria reserva</TableHead>
               <TableHead>Hora apertura</TableHead>
@@ -293,7 +347,8 @@ function App() {
             {LoadingEspacios && <LoadingRow/>}
             {espacios.map((espacio) => (
               <TableRow key={espacio.id}>
-                  <TableCell>{espacio.id}</TableCell>
+                  <TableCell>{espacio.id}</TableCell> 
+                  {esGerente && <TableCell>{espacio.reservable ? "Si" : "No"}</TableCell>}
                   <TableCell>{espacio.tamano}</TableCell>
                   <TableCell>{title(espacio.categoriaReserva.toLowerCase())}</TableCell>
                   <TableCell>{espacio.horario.horaApertura}</TableCell>
@@ -311,6 +366,98 @@ function App() {
                         setEspaciosSeleccionados(espaciosSeleccionados.concat(espacio))
                       }
                     }}>{espaciosSeleccionados.some((e) => e.id == espacio.id) ? "Cancelar" : "Seleccionar" }</Button></TableCell>
+                    {esGerente && 
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                        <Button className="bg-indigo-500 hover:bg-indigo-600">Editar</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Editar espacio</DialogTitle>
+                            <DialogDescription>
+                              <form className='pt-4' onSubmit={modificarEspacio}>
+                                <div className='flex flex-col gap-2'>
+                                  <Input readOnly value={espacio.id} id="idEspacio" className="hidden"/>
+                              {/* <Input id="planta" placeholder="Introduzca la planta"/> */}
+                                <div className="grid w-full gap-1.5">
+                                  <Label htmlFor="reservable">Reservable</Label>
+                                  <Checkbox required id="reservable" />
+                                </div>
+                                <div className="grid w-full gap-1.5">
+                                  <Label htmlFor="horaInicio">Hora comienzo reserva disponible</Label>
+                                  <Input className="w-full" type="number" min={0} max={23} step={1} id="horaInicio" placeholder="Hora comienzo reserva"/>
+                                </div>
+                                <div className="grid w-full gap-1.5">
+                                  <Label htmlFor="horaFinal">Hora final reserva disponible</Label>
+                                  <Input className="w-full" type="number" min={0} max={23} step={1} id="horaFinal" placeholder="Hora final reserva"/>
+                                </div>
+                                <div className="grid w-full gap-1.5">
+                                  <Label htmlFor="porcentajeUso">Porcentaje máximo de uso</Label>
+                                  <Input className="w-full" type="number" min={0} max={100} step={1} id="porcentajeUso" placeholder="Porcentaje uso maximo"/>
+                                </div>
+                                <div className="grid w-full gap-1.5">
+                                <Label htmlFor="categoriaReserva">Categoría de uso de reserva</Label>
+                                <Select className="w-full" required onValueChange={(value) => {setCategoriaReservaNueva(value)}} id="categoriaReserva">
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Categoria de reserva" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="AULA">Aula</SelectItem>
+                                    <SelectItem value="SEMINARIO">Seminario</SelectItem>
+                                    <SelectItem value="Laboratorio">Laboratorio</SelectItem>
+                                    <SelectItem value="DESPACHO">Despacho</SelectItem>
+                                    <SelectItem value="SALA_COMUN">Sala común</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                </div>
+                                <div className="grid w-full gap-1.5">
+                                <Label htmlFor="entidadAsignada">Entidad asignada al espacio</Label>
+                                <Select value={entidadAsignadaNueva} className="w-full" required onValueChange={(value) => {setEntidadAsignadaNueva(value)}} id="entidadAsignada">
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Entidad asignada al espacio" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="EINA">EINA</SelectItem>
+                                    <SelectItem value="DEPARTAMENTO">Departamento</SelectItem>
+                                    <SelectItem value="PERSONAS">Personas</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                </div>
+                                {entidadAsignadaNueva == "DEPARTAMENTO" && 
+                                  <div className="grid w-full gap-1.5">
+                                  <Label htmlFor="departamentoAsignado">Departamento asignado al espacio</Label>
+                                  <Select value={departamentoAsignadoNueva} className="w-full" required onValueChange={(value) => {setDepartamentoAsignadoNueva(value)}} id="departamentoAsignado">
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Departamento asignado al espacio" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Informatica_e_Ingenieria_de_sistemas">Informatica e Ingenieria de sistemas</SelectItem>
+                                      <SelectItem value="Ingenieria_electronica_y_comunicaciones">Ingenieria electronica y comunicaciones</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  </div>
+                                }
+                                {entidadAsignadaNueva == "PERSONAS" && 
+                                  <div className="grid w-full gap-1.5">
+                                  <Label htmlFor="personasAsignado">Personas asignadas al espacio</Label>
+                                  <Input className="w-full" type="text" id="personasAsignado" placeholder="Personas asignadas"/>
+                                  <span className="text-gray-600">
+                                    Introduce los emails separados por comas
+                                  </span>
+                                  </div>
+                                }
+                                <Button className="bg-green-500 text-white hover:bg-green-600" type="submit">Guardar cambios</Button>
+                                </div>
+                                </form>
+                                
+                            </DialogDescription>
+                          </DialogHeader>
+                        </DialogContent>
+                      </Dialog>
+                 
+                    </TableCell>
+                  }
               </TableRow>))}
           </TableBody>
         </Table>
@@ -493,7 +640,7 @@ function App() {
                 {/* <Input id="planta" placeholder="Introduzca la planta"/> */}
                 <div className="grid w-full gap-1.5">
                   <Label htmlFor="numOcupantes">Numero de ocupantes esperado</Label>
-                  <Input className="w-full" type="number" min={0} step={1} id="numOcupantes" placeholder="Número ocupantes esperado"/>
+                  <Input required className="w-full" type="number" min={0} step={1} id="numOcupantes" placeholder="Número ocupantes esperado"/>
                 </div>
                 <div className="grid w-full gap-1.5">
                   <Label htmlFor="fecha">Fecha reserva</Label>
@@ -839,7 +986,7 @@ function App() {
   
   return (
     <>
-    <div className='flex-col w-3/4 md:w-1/2 items-center mx-auto pb-12'>
+    <div className='flex-col md:w-3/4 items-center mx-auto pb-12'>
       <Header/>
       
       <Login/>
