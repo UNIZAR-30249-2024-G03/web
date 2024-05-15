@@ -22,10 +22,32 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { Label } from "@/components/ui/label"
 import { Separator } from '@radix-ui/react-separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEffect, useState } from 'react'
 import { useToast } from "@/components/ui/use-toast"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { format } from "date-fns"
+import { Calendar as CalendarIcon } from "lucide-react"
+ 
+import { cn } from "@/lib/utils"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import es from 'date-fns/locale/es';
+
 
 const serverHost = "http://localhost:4040"
 
@@ -42,7 +64,6 @@ function arrayToString (array){
 }
 
 function App() {
-  const { toast } = useToast()
   const [persona, setPersona] = useState(undefined)
   const [email, setEmail] = useState("")
 
@@ -55,6 +76,7 @@ function App() {
     const [LoadingEspacios, setLoadingEspacios] = useState(false)
     
     function MostrarReservas (){
+      const { toast } = useToast()
       const LoadingRow = ( () =>
         <TableRow key={"loading"}>
           <TableCell>
@@ -148,8 +170,11 @@ function App() {
     }
     
     function BuscarEspacios (){
+      const { toast } = useToast()
       const [plantaSeleccionada, setPlantaSeleccionada] = useState(undefined)
       const [categoriaReserva, setCategoriaReserva] = useState(undefined)
+      const [tipoUsoReserva, setTipoUsoReserva] = useState(undefined)
+      const [dateReserva, setDateReserva] = useState(new Date())
       
       const LoadingRow = ( () =>
         <TableRow key={"loading"}>
@@ -218,10 +243,182 @@ function App() {
           })
         });
       }
+
+      const reservarEspacios = (e) => {
+        e.preventDefault();
+        const fechaInicio = new Date(dateReserva);
+        fechaInicio.setHours(e.target.horaInicio.value, 0, 0)
+        const fechaFinal = new Date(dateReserva);
+        fechaFinal.setHours(e.target.horaFinal.value, 0, 0)
+        const body = {
+          idUsuario: email,
+          idsEspacios: espaciosSeleccionados.map((e) => e.id),
+          tipoUsoReserva: tipoUsoReserva,
+          numMaxOcupantes: parseInt(e.target.numOcupantes.value),
+          fechaInicio: fechaInicio.toISOString(),
+          fechaFinal: fechaFinal.toISOString(),
+          descripcion: e.target.descripcion.value,
+        }
+        console.log(body)
+        const params = new URLSearchParams();
+        params.set("idUsuario", email)
+        params.set("idsEspacios", arrayToString(espaciosSeleccionados.map((e) => e.id)))
+        params.set("tipoUsoReserva", tipoUsoReserva)
+        params.set("numMaxOcupantes", e.target.numOcupantes.value)
+        params.set("fechaInicio", fechaInicio.toISOString())
+        params.set("fechaFinal", fechaFinal.toISOString())
+        params.set("descripcion", e.target.descripcion.value)
+
+        fetch(serverHost + "/reservas?" + params.toString() ,{
+          method: "POST",
+        })
+        .then(async response => {
+          console.log(response)
+          if (response.status == 200){
+            return response.json()
+          }
+          else {
+            const motivo = await response.text()
+            toast({
+              variant: "destructive",
+              title: "¡No se ha podido reservar!",
+              description: motivo,
+            })
+            console.log(motivo)
+          }
+        }).then(json => {
+          if (json){
+            setEspaciosSeleccionados([])
+            toast({
+              title: "¡Reserva completada!",
+            })
+          }
+          console.log(json)
+        }).catch(() => {
+          toast({
+            variant: "destructive",
+            title: "¡Algo ha fallado!",
+            description: "Compruebe que el servidor Wrapper esta en ejecución",
+          })
+        });
+        // setEspacios([])
+        // setLoadingEspacios(true)
+        // const url = new URL(serverHost + "/espacios?");
+        // const params = new URLSearchParams();
+
+        // const id = e.target.id.value
+        // if (id) params.set("id", id)
+
+        // const numOcupantes = e.target.numOcupantes.value
+        // if (numOcupantes) params.set("numMaxOcupantes", numOcupantes)
+
+        // if (categoriaReserva) params.set("categoriaReserva", categoriaReserva)
+        //   setCategoriaReserva(undefined)
+
+        // if (plantaSeleccionada) params.set("planta", plantaSeleccionada)
+        // setPlantaSeleccionada(undefined)
+
+        // const urlConParams = url + params.toString(); 
+
+        // console.log(urlConParams)
+
+        // fetch(urlConParams)
+        // .then(response => {
+        //   console.log(response)
+        //   if (response.status == 200){
+        //     return response.json()
+        //   }
+        // }).then(json => {
+        //   console.log(json)
+        //   setEspacios(json)
+        //   setLoadingEspacios(false)
+        // }).catch(() => {
+        //   toast({
+        //     variant: "destructive",
+        //     title: "¡Algo ha fallado!",
+        //     description: "Compruebe que el servidor Wrapper esta en ejecución",
+        //   })
+        // });
+      }
     
       return (
         <div >
           <span className="text-l leading-7 text-gray-800">Espacios seleccionados</span>
+          <Dialog>
+          <DialogTrigger asChild>
+          <Button className="w-full" disabled={espaciosSeleccionados.length <= 0}>Reservar</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Completar reserva</DialogTitle>
+              <DialogDescription>
+              <form className='pt-4' onSubmit={reservarEspacios}>
+                  <div className='flex flex-col gap-2'>
+                {/* <Input id="planta" placeholder="Introduzca la planta"/> */}
+                <div className="grid w-full gap-1.5">
+                  <Label htmlFor="numOcupantes">Numero de ocupantes esperado</Label>
+                  <Input className="w-full" type="number" min={0} step={1} id="numOcupantes" placeholder="Número ocupantes esperado"/>
+                </div>
+                <div className="grid w-full gap-1.5">
+                  <Label htmlFor="fecha">Fecha reserva</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateReserva && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateReserva ? format(dateReserva, "PPP", {locale: es}) : <span>Seleccione un dia</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={dateReserva}
+                        onSelect={setDateReserva}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="grid w-full gap-1.5">
+                  <Label htmlFor="horaInicio">Hora comienzo reserva</Label>
+                  <Input className="w-full" type="number" min={0} max={23} step={1} id="horaInicio" placeholder="Hora comienzo"/>
+                </div>
+                <div className="grid w-full gap-1.5">
+                  <Label htmlFor="horaFinal">Hora final reserva</Label>
+                  <Input className="w-full" type="number" min={0} max={23} step={1} id="horaFinal" placeholder="Hora final"/>
+                </div>
+                {/* <Input id="categoriaReserva" placeholder="Introduzca la categoria de reserva"/> */}
+                <div className="grid w-full gap-1.5">
+                <Label htmlFor="tipoUsoReserva">Tipo uso reserva</Label>
+                <Select className="w-full" required onValueChange={(value) => setTipoUsoReserva(value)} id="tipoUsoReserva">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo uso reserva" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Docencia">Docencia</SelectItem>
+                    <SelectItem value="Investigacio">Investigación</SelectItem>
+                    <SelectItem value="Gestion">Gestión</SelectItem>
+                    <SelectItem value="Otros">Otros</SelectItem>
+                  </SelectContent>
+                </Select>
+                </div>
+                <div className="grid w-full gap-1.5">
+                  <Label htmlFor="descripcion">Descripción</Label>
+                  <Textarea id="descripcion" placeholder="Descripcion"/>
+                </div>
+                <Button type="submit">Reservar</Button>
+                </div>
+                </form>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+          {/*  */}
           <Table>
           <TableHeader>
             <TableRow>
@@ -243,7 +440,9 @@ function App() {
                   <TableCell>{espacio.horario.horaCierre}</TableCell>
                   <TableCell>{espacio.capacidadMaxima}</TableCell>
                   <TableCell>
-                    <Button onClick={() =>{
+                    <Button
+                    className="bg-red-500 hover:bg-red-600"
+                     onClick={() =>{
                         setEspaciosSeleccionados(espaciosSeleccionados.filter((e) => e.id != espacio.id))
                     }}>Eliminar</Button></TableCell>
               </TableRow>))}
@@ -309,19 +508,22 @@ function App() {
                   <TableCell>{espacio.horario.horaCierre}</TableCell>
                   <TableCell>{espacio.capacidadMaxima}</TableCell>
                   <TableCell>
-                    <Button onClick={() =>{
+                    <Button
+                      className={espaciosSeleccionados.some((e) => e.id == espacio.id) && "bg-red-500 hover:bg-red-600"}
+                      disabled={!espacio.reservable}
+                     onClick={() =>{
                       if (espaciosSeleccionados.some((e) => e.id == espacio.id)){
                         setEspaciosSeleccionados(espaciosSeleccionados.filter((e) => e.id != espacio.id))
                       }
                       else {
                         setEspaciosSeleccionados(espaciosSeleccionados.concat(espacio))
                       }
-                    }}>{espaciosSeleccionados.some((e) => e.id == espacio.id) ? "Seleccionado" : "Seleccionar" }</Button></TableCell>
+                    }}>{espaciosSeleccionados.some((e) => e.id == espacio.id) ? "Cancelar" : "Seleccionar" }</Button></TableCell>
               </TableRow>))}
           </TableBody>
         </Table>
-        {(reservas.length == 0) && !LoadingEspacios && 
-          <div className='text-center font-bold py-4'>No hay reservas</div>
+        {(espacios.length == 0) && !LoadingEspacios && 
+          <div className='text-center font-bold py-4'>No hay espacios con esas caracteristicas</div>
         }
         </div>
       )
@@ -385,6 +587,7 @@ function App() {
   }
 
   function Login (){
+    const { toast } = useToast()
     const fetchLogin = (e) =>{
       e.preventDefault()
         const emailValue = e.target.email.value
