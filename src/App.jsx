@@ -74,6 +74,7 @@ function App() {
   const [planta0GeoJson, setplanta0GeoJson] = useState()
   const [geoJsonFiltrado, setGeoJsonFiltrado] = useState()
 
+
   function TabsDemo() {
     const [reservas, setReservas] = useState([])
     const [espaciosSeleccionados, setEspaciosSeleccionados] = useState([])
@@ -402,7 +403,7 @@ function App() {
     
       return (
         <div >
-          <span className="text-l leading-7 text-gray-800">Espacios seleccionados</span>
+          <p className="text-xl pb-4 leading-7 text-gray-800">Espacios seleccionados</p>
           <Dialog>
           <DialogTrigger asChild>
           <Button className="w-full" disabled={espaciosSeleccionados.length <= 0}>Reservar</Button>
@@ -510,8 +511,9 @@ function App() {
         </Table>
         {   espaciosSeleccionados.length == 0 && 
               <div className="text-l pt-4 text-center leading-7 text-gray-600">No hay espacios seleccionados</div>}
+              <p className="text-xl pt-14 pb-4 leading-7 text-gray-800">Busqueda de espacios</p>
             {/* <Input id="nombre" placeholder="Introduzca el nombre"/> */}
-            <form className='pt-12 z-[2000]' onSubmit={searchEspacios}>
+            <form className='z-[2000]' onSubmit={searchEspacios}>
               <div className='flex flex-row gap-2'>
             <Select className='z-[2000]' onValueChange={(value) => setPlantaSeleccionada(value)} id="planta">
               <SelectTrigger className="w-[180px]">
@@ -597,11 +599,14 @@ function App() {
 
     // console.log(cosasFiltradas)
 
-    const Popup = ({id, horaApertura, horaCierre, capacidad}) => {
+    const Popup = ({id, categoria}) => {
       return (
       <div className='flex flex-col'>
         <span>
         <b>Id: </b>{id}
+        </span>
+        <span>
+        <b>Tipo: </b>{categoria}
         </span>
       </div>
       )
@@ -609,12 +614,11 @@ function App() {
 
     function onEachFeature(feature, layer){
       if(feature.properties){
-        console.log(feature)
         layer.bindPopup(() => {
           const div = document.createElement("div");
           const root = createRoot(div);
           flushSync(() => {
-            root.render(<Popup id={feature.id.replace("espacio.", "")}/>);
+            root.render(<Popup id={feature.id.replace("espacio.", "")} categoria={feature.properties.categoria_reserva}/>);
           });
           return div.innerHTML;
           
@@ -623,9 +627,8 @@ function App() {
     }
     
     return (
-          <MapContainer className='map' center={center} zoom={20} maxZoom={21} scrollWheelZoom={true}>
+          <MapContainer className='map' center={center} zoom={19} maxZoom={21} scrollWheelZoom={true}>
           <TileLayer
-            zIndex={0}
             maxZoom={21}
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
