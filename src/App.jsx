@@ -68,11 +68,27 @@ function arrayToString (array){
 function App() {
   const [persona, setPersona] = useState(undefined)
   const [email, setEmail] = useState("")
+  const [planta0GeoJson, setplanta0GeoJson] = useState()
+  const [geoJsonFiltrado, setGeoJsonFiltrado] = useState()
 
   function TabsDemo() {
     const [reservas, setReservas] = useState([])
-    const [espacios, setEspacios] = useState([])
     const [espaciosSeleccionados, setEspaciosSeleccionados] = useState([])
+    const [espacios, setEspacios] = useState([])
+    const [espaciosMostrarGeoJSON, setEspaciosMostrarGeoJSON] = useState([])
+
+    useEffect(() =>{
+      console.log(planta0GeoJson)
+      const pruebaFiltrado = ({
+        ...planta0GeoJson,
+        features : planta0GeoJson.features.filter((f) => espacios.some((e) => e.id == f.id.replace("espacio.", "")))
+        }
+      )
+      console.log(pruebaFiltrado)
+      setEspaciosMostrarGeoJSON(pruebaFiltrado)
+      console.log("espacios modificado")
+    }
+    , [espacios])
 
     const [LoadingReservas, setLoadingReservas] = useState(false)
     const [LoadingEspacios, setLoadingEspacios] = useState(false)
@@ -177,6 +193,54 @@ function App() {
       const [categoriaReserva, setCategoriaReserva] = useState(undefined)
       const [tipoUsoReserva, setTipoUsoReserva] = useState(undefined)
       const [dateReserva, setDateReserva] = useState(new Date())
+
+      const TablaEspacios = () => {
+        console.log(espacios)
+        return (
+          <>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Id</TableHead>
+              <TableHead>Tamaño (m2)</TableHead>
+              <TableHead>Categoria reserva</TableHead>
+              <TableHead>Hora apertura</TableHead>
+              <TableHead>Hora cierre</TableHead>
+              <TableHead>Capacidad</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {LoadingEspacios && <LoadingRow/>}
+            {espacios.map((espacio) => (
+              <TableRow key={espacio.id}>
+                  <TableCell>{espacio.id}</TableCell>
+                  <TableCell>{espacio.tamano}</TableCell>
+                  <TableCell>{title(espacio.categoriaReserva.toLowerCase())}</TableCell>
+                  <TableCell>{espacio.horario.horaApertura}</TableCell>
+                  <TableCell>{espacio.horario.horaCierre}</TableCell>
+                  <TableCell>{espacio.capacidadMaxima}</TableCell>
+                  <TableCell>
+                    <Button
+                      className={espaciosSeleccionados.some((e) => e.id == espacio.id) && "bg-red-500 hover:bg-red-600"}
+                      disabled={!espacio.reservable}
+                     onClick={() =>{
+                      if (espaciosSeleccionados.some((e) => e.id == espacio.id)){
+                        setEspaciosSeleccionados(espaciosSeleccionados.filter((e) => e.id != espacio.id))
+                      }
+                      else {
+                        setEspaciosSeleccionados(espaciosSeleccionados.concat(espacio))
+                      }
+                    }}>{espaciosSeleccionados.some((e) => e.id == espacio.id) ? "Cancelar" : "Seleccionar" }</Button></TableCell>
+              </TableRow>))}
+          </TableBody>
+        </Table>
+        <div>
+          {(espacios.length == 0) && !LoadingEspacios && 
+          <div className='text-center font-bold py-4'>No hay espacios con esas caracteristicas</div>}
+        </div>
+        </>
+        )
+      }
       
       const LoadingRow = ( () =>
         <TableRow key={"loading"}>
@@ -461,6 +525,7 @@ function App() {
                 <SelectValue placeholder="Planta" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="0">0</SelectItem>
                 <SelectItem value="1">1</SelectItem>
                 <SelectItem value="2">2</SelectItem>
                 <SelectItem value="3">3</SelectItem>
@@ -488,45 +553,23 @@ function App() {
             </form>
           
           <Separator className='my-2'/>
-          <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Id</TableHead>
-              <TableHead>Tamaño (m2)</TableHead>
-              <TableHead>Categoria reserva</TableHead>
-              <TableHead>Hora apertura</TableHead>
-              <TableHead>Hora cierre</TableHead>
-              <TableHead>Capacidad</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {LoadingEspacios && <LoadingRow/>}
-            {espacios.map((espacio) => (
-              <TableRow key={espacio.id}>
-                  <TableCell>{espacio.id}</TableCell>
-                  <TableCell>{espacio.tamano}</TableCell>
-                  <TableCell>{title(espacio.categoriaReserva.toLowerCase())}</TableCell>
-                  <TableCell>{espacio.horario.horaApertura}</TableCell>
-                  <TableCell>{espacio.horario.horaCierre}</TableCell>
-                  <TableCell>{espacio.capacidadMaxima}</TableCell>
-                  <TableCell>
-                    <Button
-                      className={espaciosSeleccionados.some((e) => e.id == espacio.id) && "bg-red-500 hover:bg-red-600"}
-                      disabled={!espacio.reservable}
-                     onClick={() =>{
-                      if (espaciosSeleccionados.some((e) => e.id == espacio.id)){
-                        setEspaciosSeleccionados(espaciosSeleccionados.filter((e) => e.id != espacio.id))
-                      }
-                      else {
-                        setEspaciosSeleccionados(espaciosSeleccionados.concat(espacio))
-                      }
-                    }}>{espaciosSeleccionados.some((e) => e.id == espacio.id) ? "Cancelar" : "Seleccionar" }</Button></TableCell>
-              </TableRow>))}
-          </TableBody>
-        </Table>
-        {(espacios.length == 0) && !LoadingEspacios && 
-          <div className='text-center font-bold py-4'>No hay espacios con esas caracteristicas</div>
-        }
+          <Tabs defaultValue="tabla" className="flex-col items-center mx-auto gap-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="tabla">Ver tabla</TabsTrigger>
+            <TabsTrigger value="mapa">Ver mapa</TabsTrigger>
+          </TabsList>
+          <TabsContent value="tabla">
+          <TablaEspacios/>
+          </TabsContent>
+          <TabsContent value="mapa">
+            <div className='h-screen'>
+          <div className='w-full h-2/3'>
+          {planta0GeoJson && <Mapa geoJson={espaciosMostrarGeoJSON}/>}
+          </div>
+        </div>
+          </TabsContent>
+        </Tabs>
+        
         </div>
       )
     }
@@ -547,33 +590,15 @@ function App() {
     )
   }
 
-  function Mapa(){
+  const Mapa = (geoJSON) => {
+    console.log(geoJSON.geoJson)
     const center = [41.683728, -0.888642]
     const rectangle = [
       [51.49, -0.08],
       [51.5, -0.06],
     ]
     const [plantaSeleccionada, setPlantaSeleccionada] = useState(0)
-    const [planta0GeoJson, setplanta0GeoJson] = useState()
     
-    useEffect(
-      () => {
-        fetch("http://localhost:8080/geoserver/proyecto/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=proyecto%3Aespacio&outputFormat=application%2Fjson")
-        .then((e) => e.json())
-        .then((json) => { 
-          console.log(json)
-          // setplanta0GeoJson(json)
-          const planta0 = (
-            {
-              ...json,
-              features : json.features.filter((f) => f.properties.planta == 0)
-            }
-          )
-          setplanta0GeoJson(planta0)
-        }) 
-      }
-      , [])
-
     return (
           <MapContainer className='map' center={center} zoom={20} maxZoom={21} scrollWheelZoom={true}>
           <TileLayer
@@ -582,95 +607,7 @@ function App() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <LayersControl position="topright">
-            {/* <LayersControl.Overlay name="Prueba GeoJSON" key="GeoJSON">
-                  <GeoJSON data={planta0GeoJson} style={{color: "purple"}}></GeoJSON>
-                  </LayersControl.Overlay> */}
-                  <LayersControl.Overlay name="Prueba GeoJSON" key="GeoJSON">
-                    <GeoJSON key={JSON.stringify(planta0GeoJson?.features)} data={planta0GeoJson} style={{color: "purple"}}></GeoJSON>
-                  </LayersControl.Overlay>
-            <LayersControl.Overlay name="Planta 0" key="planta0">
-                  <WMSTileLayer
-                  eventHandlers={{
-                    add: () => {
-                      
-                    },
-                  }}
-                        maxZoom={21}
-                        url="http://localhost:8080/geoserver/proyecto/wms"
-                        params={{
-                                format:"image/png",
-                                layers:"proyecto:planta0",
-                                transparent: true,
-                              }}
-                  />
-              </LayersControl.Overlay>
-              <LayersControl.Overlay name="Planta 1" key="planta1">
-                  <WMSTileLayer
-                  eventHandlers={{
-                    add: () => {
-                      
-                    },
-                  }}
-                        maxZoom={21}
-                        url="http://localhost:8080/geoserver/proyecto/wms"
-                        params={{
-                                format:"image/png",
-                                layers:"proyecto:planta1",
-                                transparent: true,
-                              }}
-                  />
-              </LayersControl.Overlay>
-              <LayersControl.Overlay name="Planta 2" key="planta2">
-                  <WMSTileLayer
-                  eventHandlers={{
-                    add: () => {
-                      
-                    },
-                  }}
-                        maxZoom={21}
-                        url="http://localhost:8080/geoserver/proyecto/wms"
-                        params={{
-                                format:"image/png",
-                                layers:"proyecto:planta2",
-                                transparent: true,
-                              }}
-                  />
-              </LayersControl.Overlay>
-              <LayersControl.Overlay name="Planta 3" key="planta3">
-                  <WMSTileLayer
-                  eventHandlers={{
-                    add: () => {
-                      
-                    },
-                  }}
-                        maxZoom={21}
-                        url="http://localhost:8080/geoserver/proyecto/wms"
-                        params={{
-                                format:"image/png",
-                                layers:"proyecto:planta3",
-                                transparent: true,
-                              }}
-                  />
-              </LayersControl.Overlay>
-              <LayersControl.Overlay name="Planta 4" key="planta4">
-                  <WMSTileLayer
-                  eventHandlers={{
-                    add: () => {
-                      
-                    },
-                  }}
-                        maxZoom={21}
-                        url="http://localhost:8080/geoserver/proyecto/wms"
-                        params={{
-                                format:"image/png",
-                                layers:"proyecto:planta4",
-                                transparent: true,
-                              }}
-                  />
-              </LayersControl.Overlay>
-          </LayersControl>
-          
+          <GeoJSON key={JSON.stringify(geoJSON?.geoJson.features)} data={geoJSON.geoJson} style={{color: "purple"}}></GeoJSON>
         </MapContainer>
     
     )
@@ -757,6 +694,24 @@ function App() {
             </div>
           </form>)
   }
+
+  useEffect(
+    () => {
+      fetch("http://localhost:8080/geoserver/proyecto/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=proyecto%3Aespacio&outputFormat=application%2Fjson")
+      .then((e) => e.json())
+      .then((json) => { 
+        console.log(json)
+        // setplanta0GeoJson(json)
+        const planta0 = (
+          {
+            ...json,
+            features : json.features.filter((f) => f.properties.planta == 0)
+          }
+        )
+        setplanta0GeoJson(planta0)
+      }) 
+    }
+    , [])
   
   return (
     <>
@@ -766,10 +721,9 @@ function App() {
       <Login/>
       {persona && 
         <TabsDemo/>
+      
       }
-      <div className='w-full h-screen'>
-        <Mapa/>
-      </div>
+      
     </div>
 
     </>
