@@ -65,6 +65,19 @@
     --ring: 212.7 26.8% 83.9%;
   }
 }
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+.mapMainContainer {
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+  width: 80%;
+  margin: auto;
+}
  
 @layer base {
   * {

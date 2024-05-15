@@ -47,7 +47,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import es from 'date-fns/locale/es';
-
+import 'leaflet/dist/leaflet.css';
+import { GeoJSON, MapContainer, TileLayer, FeatureGroup, Rectangle, useMap, LayerGroup, Circle, LayersControl, Marker, Popup, WMSTileLayer } from 'react-leaflet'
+import { useMapEvents } from 'react-leaflet/hooks'
 
 const serverHost = "http://localhost:4040"
 
@@ -545,6 +547,136 @@ function App() {
     )
   }
 
+  function Mapa(){
+    const center = [41.683728, -0.888642]
+    const rectangle = [
+      [51.49, -0.08],
+      [51.5, -0.06],
+    ]
+    const [plantaSeleccionada, setPlantaSeleccionada] = useState(0)
+    const [planta0GeoJson, setplanta0GeoJson] = useState()
+    
+    useEffect(
+      () => {
+        fetch("http://localhost:8080/geoserver/proyecto/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=proyecto%3Aespacio&outputFormat=application%2Fjson")
+        .then((e) => e.json())
+        .then((json) => { 
+          console.log(json)
+          // setplanta0GeoJson(json)
+          const planta0 = (
+            {
+              ...json,
+              features : json.features.filter((f) => f.properties.planta == 0)
+            }
+          )
+          setplanta0GeoJson(planta0)
+        }) 
+      }
+      , [])
+
+    return (
+          <MapContainer className='map' center={center} zoom={20} maxZoom={21} scrollWheelZoom={true}>
+          <TileLayer
+            zIndex={0}
+            maxZoom={21}
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <LayersControl position="topright">
+            {/* <LayersControl.Overlay name="Prueba GeoJSON" key="GeoJSON">
+                  <GeoJSON data={planta0GeoJson} style={{color: "purple"}}></GeoJSON>
+                  </LayersControl.Overlay> */}
+                  <LayersControl.Overlay name="Prueba GeoJSON" key="GeoJSON">
+                    <GeoJSON key={JSON.stringify(planta0GeoJson?.features)} data={planta0GeoJson} style={{color: "purple"}}></GeoJSON>
+                  </LayersControl.Overlay>
+            <LayersControl.Overlay name="Planta 0" key="planta0">
+                  <WMSTileLayer
+                  eventHandlers={{
+                    add: () => {
+                      
+                    },
+                  }}
+                        maxZoom={21}
+                        url="http://localhost:8080/geoserver/proyecto/wms"
+                        params={{
+                                format:"image/png",
+                                layers:"proyecto:planta0",
+                                transparent: true,
+                              }}
+                  />
+              </LayersControl.Overlay>
+              <LayersControl.Overlay name="Planta 1" key="planta1">
+                  <WMSTileLayer
+                  eventHandlers={{
+                    add: () => {
+                      
+                    },
+                  }}
+                        maxZoom={21}
+                        url="http://localhost:8080/geoserver/proyecto/wms"
+                        params={{
+                                format:"image/png",
+                                layers:"proyecto:planta1",
+                                transparent: true,
+                              }}
+                  />
+              </LayersControl.Overlay>
+              <LayersControl.Overlay name="Planta 2" key="planta2">
+                  <WMSTileLayer
+                  eventHandlers={{
+                    add: () => {
+                      
+                    },
+                  }}
+                        maxZoom={21}
+                        url="http://localhost:8080/geoserver/proyecto/wms"
+                        params={{
+                                format:"image/png",
+                                layers:"proyecto:planta2",
+                                transparent: true,
+                              }}
+                  />
+              </LayersControl.Overlay>
+              <LayersControl.Overlay name="Planta 3" key="planta3">
+                  <WMSTileLayer
+                  eventHandlers={{
+                    add: () => {
+                      
+                    },
+                  }}
+                        maxZoom={21}
+                        url="http://localhost:8080/geoserver/proyecto/wms"
+                        params={{
+                                format:"image/png",
+                                layers:"proyecto:planta3",
+                                transparent: true,
+                              }}
+                  />
+              </LayersControl.Overlay>
+              <LayersControl.Overlay name="Planta 4" key="planta4">
+                  <WMSTileLayer
+                  eventHandlers={{
+                    add: () => {
+                      
+                    },
+                  }}
+                        maxZoom={21}
+                        url="http://localhost:8080/geoserver/proyecto/wms"
+                        params={{
+                                format:"image/png",
+                                layers:"proyecto:planta4",
+                                transparent: true,
+                              }}
+                  />
+              </LayersControl.Overlay>
+          </LayersControl>
+          
+        </MapContainer>
+    
+    )
+    
+  }
+
   function Header (){
     return (
       <>
@@ -627,6 +759,7 @@ function App() {
   }
   
   return (
+    <>
     <div className='flex-col w-3/4 md:w-1/2 items-center mx-auto pb-12'>
       <Header/>
       
@@ -634,7 +767,12 @@ function App() {
       {persona && 
         <TabsDemo/>
       }
+      <div className='w-full h-screen'>
+        <Mapa/>
+      </div>
     </div>
+
+    </>
   )
 }
 
