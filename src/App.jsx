@@ -570,7 +570,7 @@ function App() {
     }
 
     return (
-      <Tabs defaultValue="nombre" className="flex-col items-center mx-auto gap-4">
+      <Tabs defaultValue="reservas" className="flex-col items-center mx-auto gap-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="reservas">Ver reservas</TabsTrigger>
           <TabsTrigger value="espacio">Buscar espacios</TabsTrigger>
