@@ -405,7 +405,7 @@ function App() {
                                   <SelectContent>
                                     <SelectItem value="AULA">Aula</SelectItem>
                                     <SelectItem value="SEMINARIO">Seminario</SelectItem>
-                                    <SelectItem value="Laboratorio">Laboratorio</SelectItem>
+                                    <SelectItem value="LABORATORIO">Laboratorio</SelectItem>
                                     <SelectItem value="DESPACHO">Despacho</SelectItem>
                                     <SelectItem value="SALA_COMUN">Sala común</SelectItem>
                                   </SelectContent>
