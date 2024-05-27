@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Separator } from '@radix-ui/react-separator'
+//import { Separator } from '@radix-ui/react-separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEffect, useState } from 'react'
 import { useToast } from "@/components/ui/use-toast"
@@ -56,6 +56,7 @@ import { useMapEvents } from 'react-leaflet/hooks'
 import Control from 'react-leaflet-custom-control'
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
+import { Separator } from '@/components/ui/separator'
 
 const serverHost = "http://localhost:4040"
 
@@ -792,17 +793,58 @@ function App() {
       )
     }
 
+    function Notificaciones(){
+      if (persona.notificaciones.length == 0) return (
+        <div className='text-center font-bold py-4'>No tienes notificaciones</div>
+      )
+      else return (
+        <div className="flex pt-4 flex-col gap-y-1">
+        {persona.notificaciones.map((n, index) => {
+          return (
+            <>
+            <div key={index} className='text-center py-4'>{n}</div>
+            {index+1 != persona.notificaciones.length && <Separator className='my-2'/>}
+            </>
+          )
+        })}
+        <Button onClick={() => {
+          const params = new URLSearchParams();
+          params.set("email", persona.email)
+
+          fetch(serverHost + "/eliminarNotificaciones?" + params.toString() ,{
+            method: "PUT",
+          }).then((res) => {
+            if (res.ok){
+              fetch(serverHost + "/personas?email=" + persona.email)
+              .then(response => {
+                return response.json()
+              }).then(json => {
+                //console.log(json)
+                setPersona(json)
+              })
+            }
+          })
+        }}>
+          Eliminar notificaciones</Button>
+        </div>
+      )
+    }
+
     return (
       <Tabs defaultValue="reservas" className="flex-col items-center mx-auto gap-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="reservas">Ver reservas</TabsTrigger>
           <TabsTrigger value="espacio">Buscar espacios</TabsTrigger>
+          <TabsTrigger value="notificaciones">Notificaciones ({persona.notificaciones.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="reservas">
           <MostrarReservas/>
         </TabsContent>
         <TabsContent value="espacio">
           <BuscarEspacios/>
+        </TabsContent>
+        <TabsContent value="notificaciones">
+          <Notificaciones/>
         </TabsContent>
       </Tabs>
     )
