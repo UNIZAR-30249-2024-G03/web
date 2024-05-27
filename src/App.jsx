@@ -542,8 +542,10 @@ function App() {
         e.preventDefault();
         const fechaInicio = new Date(dateReserva);
         fechaInicio.setHours(e.target.horaInicio.value, 0, 0)
+        fechaInicio.setHours(fechaInicio.getHours() + 2)
         const fechaFinal = new Date(dateReserva);
         fechaFinal.setHours(e.target.horaFinal.value, 0, 0)
+        fechaFinal.setHours(fechaFinal.getHours() + 2)
         const params = new URLSearchParams();
         params.set("idUsuario", email)
         params.set("idsEspacios", arrayToString(espaciosSeleccionados.map((e) => e.id)))
