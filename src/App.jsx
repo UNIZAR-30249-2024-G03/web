@@ -156,8 +156,8 @@ function App() {
         params.set("idReserva", id)
         params.set("idUsuario", email)
 
-        fetch(serverHost + "/reservas?" + params.toString() ,{
-          method: "DELETE",
+        fetch(serverHost + "/eliminarReserva?" + params.toString() ,{
+          method: "PUT",
         }).then(response => {
           // console.log(response)
           if (response.status == 200){
