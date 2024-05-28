@@ -58,7 +58,7 @@ import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { Separator } from '@/components/ui/separator'
 
-const serverHost = "http://localhost:4040"
+const serverHost = "http://localhost:8181"
 
 function title(str) {
   return str.replace(/(^|\s)\S/g, function(t) { return t.toUpperCase() });
@@ -157,7 +157,7 @@ function App() {
         params.set("idUsuario", email)
 
         fetch(serverHost + "/eliminarReserva?" + params.toString() ,{
-          method: "PUT",
+          method: "POST",
         }).then(response => {
           // console.log(response)
           if (response.status == 200){
@@ -814,7 +814,7 @@ function App() {
           params.set("email", persona.email)
 
           fetch(serverHost + "/eliminarNotificaciones?" + params.toString() ,{
-            method: "PUT",
+            method: "POST",
           }).then((res) => {
             if (res.ok){
               fetch(serverHost + "/personas?email=" + persona.email)
